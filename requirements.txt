@@ -1,0 +1,4 @@
+asyncio==3.4.3
+requests==2.11.1
+slacker==0.9.29
+websockets==3.2
