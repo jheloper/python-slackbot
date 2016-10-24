@@ -1,8 +1,12 @@
 import requests
 import xml.etree.ElementTree as Et
+import json
 
-NAVER_API_CLIENT_ID = 'z4SmZil0RYHCtsqQk8QP'
-NAVER_API_CLIENT_SECRET = 'WT5IKiNKO_'
+# sercet file read, this file content is api token, key, and other secrets...
+secrets = json.loads(open('../secret.json').read())
+
+NAVER_API_CLIENT_ID = secrets['NAVER_API_CLIENT_ID']
+NAVER_API_CLIENT_SECRET = secrets['NAVER_API_CLIENT_SECRET']
 
 
 def test():
@@ -30,5 +34,3 @@ def view_map(word):
     url = 'http://map.naver.com'
     res = requests.get('http://map.naver.com/?query=%ED%86%A0%EC%A6%88+%EA%B0%95%EB%82%A8%EC%A0%90&type=SITE_1')
     print(res.content)
-
-view_map('')

@@ -91,3 +91,6 @@ myvenv/
 
 # IDE
 .idea
+
+# Secret file
+secret.json

@@ -5,12 +5,13 @@ import asyncio
 import logging
 import requests
 
-
 # 디버그용 로거, 나중에 삭제할 예정.
 logger = logging.getLogger('websockets')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
+# sercet file read, this file content is api token, key, and other secrets...
+secrets = json.loads(open('../secret.json').read())
 
 class SlackBot:
 
@@ -72,6 +73,6 @@ class SlackBot:
         res_json = json.loads(response.read().decode('utf-8'))
 
 
-sb = SlackBot('xoxb-92362021782-k3xEOKSd2w7CadqRtYmY9jhs')
+sb = SlackBot(secrets['SLACK_API_TOKEN'])
 asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
 asyncio.get_event_loop().run_forever()
