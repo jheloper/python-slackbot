@@ -7,9 +7,10 @@ secrets = json.loads(open('../secret.json').read())
 
 NAVER_API_CLIENT_ID = secrets['NAVER_API_CLIENT_ID']
 NAVER_API_CLIENT_SECRET = secrets['NAVER_API_CLIENT_SECRET']
+PUBLIC_KMA_API_KEY = secrets['PUBLIC_KMA_API_KEY']
 
 
-def test():
+def test_api():
     # NAVER 지역 검색 API를 통해 특정 장소의 위치 알아내기
 
     query = {'query': '토즈 강남점', 'display': 5}
@@ -29,8 +30,28 @@ def test():
         print(i.find('link').text)
 
 
-def view_map(word):
-    query = {'query': '토즈 강남점', 'type': 'SITE_1'}
-    url = 'http://map.naver.com'
-    res = requests.get('http://map.naver.com/?query=%ED%86%A0%EC%A6%88+%EA%B0%95%EB%82%A8%EC%A0%90&type=SITE_1')
+# 네이버 지도 검색 결과.
+def search_location(location):
+    url = 'http://map.naver.com/?query=' + requests.utils.quote(location) + '&type=SITE_1'
+    return url
+
+
+# 구글 번역 결과.
+def search_translate(source_str):
+    url = 'https://translate.google.co.kr/?hl=ko&tab=wT#en/ko/' + requests.utils.quote(source_str)
+    return url
+
+
+# 공공데이터 동네예보 조회 결과.
+def search_weather():
+    params = {'ServiceKey': PUBLIC_KMA_API_KEY, 'base_date': '20161026', 'base_time': '0000', 'nx': '1', 'ny': '1'}
+    headers = {'Content-Type': 'application/xml'}
+    res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2', params=params, headers=headers)
+    print(res.url)
+    print(res.headers)
     print(res.content)
+
+
+# search_weather()
+print(search_location('토즈 강남점'))
+print(search_translate('hi, there'))

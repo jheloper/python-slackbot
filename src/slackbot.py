@@ -1,17 +1,18 @@
-from urllib import request, parse
+from urllib import parse
 import json
 import websockets
 import asyncio
 import logging
 import requests
 
-# 디버그용 로거, 나중에 삭제할 예정.
+# debug logger...
 logger = logging.getLogger('websockets')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 # sercet file read, this file content is api token, key, and other secrets...
 secrets = json.loads(open('../secret.json').read())
+
 
 class SlackBot:
 
@@ -21,9 +22,8 @@ class SlackBot:
         self.id = None
 
     def connect_rtm(self):
-        connect_data = parse.urlencode({'token': self.token}).encode('ascii')
-        response = request.urlopen('https://slack.com/api/rtm.start', connect_data)
-        res_json = json.loads(response.read().decode('utf-8'))
+        response = requests.post('https://slack.com/api/rtm.start', data={'token': self.token})
+        res_json = response.json()
         self.id = res_json['self']['id']
 
         if res_json['ok'] is True and res_json['url'] is not None:
@@ -37,9 +37,9 @@ class SlackBot:
         while True:
             msg = yield from self.websocket.recv()
             msg_json = json.loads(msg)
-            if msg_json['type'] in ['hello']:
+            if msg_json['type'] == 'hello':
                 print("slack bot connect success!, message is {}".format(msg))
-            elif msg_json['type'] in ['message'] and msg_json.get('text', '') is not None:
+            elif msg_json['type'] == 'message':
                 messages = self.convert_message(msg_json.get('text', ''))
                 if messages[0] == '<@{}>'.format(self.id):
                     self.check_commands(messages[1:])
@@ -68,9 +68,9 @@ class SlackBot:
             pass
 
     def send_message(self, message):
-        connect_data = parse.urlencode({'token': self.token, 'channel': '#general', 'text': message, 'as_user': 'true'}).encode('ascii')
-        response = request.urlopen('https://slack.com/api/chat.postMessage', connect_data)
-        res_json = json.loads(response.read().decode('utf-8'))
+        response = requests.post('https://slack.com/api/chat.postMessage',
+                                 data={'token': self.token, 'channel': '#general', 'text': message, 'as_user': 'true'})
+        res_json = response.json()
 
 
 sb = SlackBot(secrets['SLACK_API_TOKEN'])
