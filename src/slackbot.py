@@ -1,9 +1,9 @@
-from urllib import parse
 import json
 import websockets
 import asyncio
 import logging
 import requests
+import src.commands as cmds
 
 # debug logger...
 logger = logging.getLogger('websockets')
@@ -29,49 +29,46 @@ class SlackBot:
         if res_json['ok'] is True and res_json['url'] is not None:
             return res_json['url']
         else:
-            raise Exception('slack rtm api connect is fail...')
+            raise Exception('Slack RTM API Connect is failed...')
 
     @asyncio.coroutine
     def listen_rtm(self):
         self.websocket = yield from websockets.connect(self.connect_rtm())
         while True:
-            msg = yield from self.websocket.recv()
-            msg_json = json.loads(msg)
-            if msg_json['type'] == 'hello':
-                print("slack bot connect success!, message is {}".format(msg))
-            elif msg_json['type'] == 'message':
-                messages = self.convert_message(msg_json.get('text', ''))
-                if messages[0] == '<@{}>'.format(self.id):
-                    self.check_commands(messages[1:])
+            recv_msg = yield from self.websocket.recv()
+            msg_json = json.loads(recv_msg)
+            if self.preprocess(msg_json):
+                messages = self.parse_message(msg_json.get('text'))
+                self.route_commands(messages)
 
-    def convert_message(self, message):
-        message = str(message)
-        if len(message) > 0:
-            return message.split()
+    def preprocess(self, msg_json):
+        if msg_json.get('type') == 'hello':
+            print('Slack Bot Connect Success! Bot Say Hello!')
+            return False
+        elif msg_json.get('type') == 'message' and msg_json.get('text') is not None:
+            if msg_json.get('text').startswith('<@{0}>'.format(self.id)):
+                return True
         else:
-            raise Exception('message is not...')
+            return False
 
-    def check_commands(self, messages):
-        messages = list(messages)
+    def parse_message(self, message_text):
+        message_text = str(message_text)
+        messages = message_text.split(' ', 2)
+        return messages[1:]
+
+    def route_commands(self, messages):
         print(messages)
-        if len(messages) > 1:
-            print(messages[0])
-            if messages[0] == '지도':
-                t = parse.urlencode({'query': '토즈 홍대점', 'type': 'SITE_1'}).encode('ascii')
-                print(t)
-                self.send_message('http://map.naver.com/?' + t.decode())
-            elif messages[0] == '번역':
-                self.send_message('https://translate.google.co.kr/?hl=ko&tab=wT#en/ko/hello+world')
-        elif len(messages) > 0:
-            self.send_message(messages[0])
+        command = messages[0]
+        if command == '지도':
+            self.send_message(cmds.search_location(messages[1]))
+        elif command == '번역':
+            self.send_message(cmds.search_translate(messages[1]))
         else:
             pass
 
     def send_message(self, message):
         response = requests.post('https://slack.com/api/chat.postMessage',
                                  data={'token': self.token, 'channel': '#general', 'text': message, 'as_user': 'true'})
-        res_json = response.json()
-
 
 sb = SlackBot(secrets['SLACK_API_TOKEN'])
 asyncio.get_event_loop().run_until_complete(sb.listen_rtm())

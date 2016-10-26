@@ -42,16 +42,16 @@ def search_translate(source_str):
     return url
 
 
-# 공공데이터 동네예보 조회 결과.
+# 공공데이터 초단기예보 조회 결과.
 def search_weather():
-    params = {'ServiceKey': PUBLIC_KMA_API_KEY, 'base_date': '20161026', 'base_time': '0000', 'nx': '1', 'ny': '1'}
+    print(PUBLIC_KMA_API_KEY)
+    params = {'ServiceKey': PUBLIC_KMA_API_KEY, 'base_date': '20161026', 'base_time': '1230', 'nx': '1', 'ny': '1'}
     headers = {'Content-Type': 'application/xml'}
-    res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2', params=params, headers=headers)
+    res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2/ForecastTimeData', params=params, headers=headers)
     print(res.url)
     print(res.headers)
     print(res.content)
 
-
 # search_weather()
-print(search_location('토즈 강남점'))
-print(search_translate('hi, there'))
+# print(search_location('토즈 강남점'))
+# print(search_translate('hi, there'))
