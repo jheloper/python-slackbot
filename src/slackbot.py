@@ -41,8 +41,7 @@ class SlackBot:
             print(msg_json)
             if self.preprocess(msg_json):
                 messages = self.parse_message(msg_json.get('text'))
-                command_result = yield from self.route_commands(msg_json.get('channel'), msg_json.get('user'), messages)
-                #yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": msg_json.get('channel'),"text": '<@{0}> {1}'.format(msg_json.get('user'), command_result)}))
+                yield from self.route_commands(msg_json.get('channel'), msg_json.get('user'), messages)
 
     def preprocess(self, msg_json):
         if msg_json.get('type') == 'hello':
@@ -62,6 +61,7 @@ class SlackBot:
     @asyncio.coroutine
     def route_commands(self, channel, user, messages):
         command = messages[0]
+
         if command == '/지도':
             command_result = cmds.search_location(messages[1])
         elif command == '/번역':
@@ -72,6 +72,7 @@ class SlackBot:
         yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": channel,
                                                    "text": '<@{0}> {1}'.format(user, command_result)}))
 
-sb = SlackBot(secrets['SLACK_API_TOKEN'])
-asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
-asyncio.get_event_loop().run_forever()
+if __name__ == '__main__':
+    sb = SlackBot(secrets['SLACK_API_TOKEN'])
+    asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
+    asyncio.get_event_loop().run_forever()
