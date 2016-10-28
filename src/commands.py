@@ -1,14 +1,17 @@
 import requests
 import xml.etree.ElementTree as Et
 import json
+from datetime import datetime, date, timedelta
+
 
 # sercet file read, this file content is api token, key, and other secrets...
 secrets = json.loads(open('../secret.json').read())
 
+city_xy = json.loads(open('../city_xy.json', 'r', encoding='utf-8').read())
+
 NAVER_API_CLIENT_ID = secrets['NAVER_API_CLIENT_ID']
 NAVER_API_CLIENT_SECRET = secrets['NAVER_API_CLIENT_SECRET']
 PUBLIC_KMA_API_KEY = secrets['PUBLIC_KMA_API_KEY']
-
 
 def test_api():
     # NAVER 지역 검색 API를 통해 특정 장소의 위치 알아내기
@@ -43,15 +46,76 @@ def search_translate(source_str):
 
 
 # 공공데이터 초단기예보 조회 결과.
-def search_weather():
-    print(PUBLIC_KMA_API_KEY)
-    params = {'ServiceKey': PUBLIC_KMA_API_KEY, 'base_date': '20161026', 'base_time': '1230', 'nx': '1', 'ny': '1'}
-    headers = {'Content-Type': 'application/xml'}
-    res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2/ForecastTimeData', params=params, headers=headers)
-    print(res.url)
-    print(res.headers)
-    print(res.content)
+def search_weather(city_str):
+    tu = (23, 20, 17, 14, 11, 8, 5, 2)
+    # fc4 = ('03', '00', '21', '18', '15', '12', '09', '06')
+    # fc7 = ('03', '00', '21', '18', '15', '12', '09', '06')
+    base_time = None
+    fcst_time = None
+    base_date = None
+    fcst_date = None
 
-# search_weather()
-# print(search_location('토즈 강남점'))
-# print(search_translate('hi, there'))
+    for i in range(len(tu)):
+        if datetime.today().hour == tu[i] and datetime.today().minute > 30:
+            base_time = tu[i]
+            break
+        elif datetime.today().hour > tu[i]:
+            base_time = tu[i]
+            break
+
+    if base_time > 19:
+        base_date = datetime.today()
+        fcst_date = datetime.today() + timedelta(days=1)
+        if base_time == 20:
+            fcst_time = '0000'
+        elif base_time == 23:
+            fcst_time = '0300'
+    else:
+        base_date = datetime.today()
+        fcst_date = datetime.today()
+        fcst_time = str(tu[i] + 4) + '00'
+
+    base_date = str(base_date.year) + str(base_date.month) + str(base_date.day)
+    fcst_date = str(fcst_date.year) + str(fcst_date.month) + str(fcst_date.day)
+    base_time = str(base_time) + '00'
+
+    params = {'base_date': base_date, 'base_time': base_time, 'nx': city_xy.get(city_str).get('nx'),
+              'ny': city_xy.get(city_str).get('ny'), '_type': 'json', 'numOfRows': '30'}
+    headers = {'Content-Type': 'application/json'}
+    res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2/ForecastSpaceData?ServiceKey=' +
+                       PUBLIC_KMA_API_KEY, params=params, headers=headers)
+    res_list = res.json().get('response').get('body').get('items').get('item')
+    dic = {}
+
+    for item in res_list:
+        categoty_value = item.get('category')
+        fcst_time_value = str(item.get('fcstTime'))
+        fcst_date_value = str(item.get('fcstDate'))
+        if categoty_value in ['POP', 'R06', 'S06', 'T3H'] and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
+            dic[categoty_value] = item.get('fcstValue')
+        elif categoty_value == 'PTY' and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
+            if item.get('fcstValue') == 0:
+                dic[categoty_value] = '없음'
+            elif item.get('fcstValue') == 1:
+                dic[categoty_value] = '비'
+            elif item.get('fcstValue') == 2:
+                dic[categoty_value] = '비/눈'
+            elif item.get('fcstValue') == 3:
+                dic[categoty_value] = '눈'
+        elif categoty_value == 'SKY' and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
+            if item.get('fcstValue') == 1:
+                dic[categoty_value] = '맑음'
+            elif item.get('fcstValue') == 2:
+                dic[categoty_value] = '구름 조금'
+            elif item.get('fcstValue') == 3:
+                dic[categoty_value] = '구름 많음'
+            elif item.get('fcstValue') == 4:
+                dic[categoty_value] = '흐림'
+
+    return '{4}시 기준 : [{5}]의 강수확룔은 [{0}%]이며 강수형태는 [{1}]입니다. 예상기온은 [{2}℃]이며 하늘상태는 [{3}]입니다.'\
+        .format(dic.get('POP'), dic.get('PTY'), dic.get('T3H'), dic.get('SKY'), fcst_time[:2], city_str)
+
+if __name__ == '__main__':
+    print(search_weather('서울'))
+    print(search_location('토즈 강남점'))
+    print(search_translate('hi, there'))

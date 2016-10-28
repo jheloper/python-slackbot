@@ -7,7 +7,7 @@ import src.commands as cmds
 
 # debug logger...
 logger = logging.getLogger('websockets')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 # sercet file read, this file content is api token, key, and other secrets...
@@ -20,6 +20,7 @@ class SlackBot:
         self.token = token
         self.websocket = None
         self.id = None
+        self.notice = None
 
     def connect_rtm(self):
         response = requests.post('https://slack.com/api/rtm.start', data={'token': self.token})
@@ -37,9 +38,11 @@ class SlackBot:
         while True:
             recv_msg = yield from self.websocket.recv()
             msg_json = json.loads(recv_msg)
+            print(msg_json)
             if self.preprocess(msg_json):
                 messages = self.parse_message(msg_json.get('text'))
-                self.route_commands(messages)
+                command_result = yield from self.route_commands(msg_json.get('channel'), msg_json.get('user'), messages)
+                #yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": msg_json.get('channel'),"text": '<@{0}> {1}'.format(msg_json.get('user'), command_result)}))
 
     def preprocess(self, msg_json):
         if msg_json.get('type') == 'hello':
@@ -56,19 +59,18 @@ class SlackBot:
         messages = message_text.split(' ', 2)
         return messages[1:]
 
-    def route_commands(self, messages):
-        print(messages)
+    @asyncio.coroutine
+    def route_commands(self, channel, user, messages):
         command = messages[0]
-        if command == '지도':
-            self.send_message(cmds.search_location(messages[1]))
-        elif command == '번역':
-            self.send_message(cmds.search_translate(messages[1]))
-        else:
-            pass
+        if command == '/지도':
+            command_result = cmds.search_location(messages[1])
+        elif command == '/번역':
+            command_result = cmds.search_location(messages[1])
+        elif command == '/날씨':
+            command_result = cmds.search_weather(messages[1])
 
-    def send_message(self, message):
-        response = requests.post('https://slack.com/api/chat.postMessage',
-                                 data={'token': self.token, 'channel': '#general', 'text': message, 'as_user': 'true'})
+        yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": channel,
+                                                   "text": '<@{0}> {1}'.format(user, command_result)}))
 
 sb = SlackBot(secrets['SLACK_API_TOKEN'])
 asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
