@@ -64,7 +64,7 @@ class SlackBot:
         if command == '/지도':
             command_result = cmds.search_location(messages[1])
         elif command == '/번역':
-            command_result = cmds.search_location(messages[1])
+            command_result = cmds.search_translate(messages[1])
         elif command == '/날씨':
             command_result = cmds.search_weather(messages[1])
 
