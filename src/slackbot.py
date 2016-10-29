@@ -23,12 +23,11 @@ class SlackBot:
         self.notice = None
 
     def connect_rtm(self):
-        response = requests.post('https://slack.com/api/rtm.start', data={'token': self.token})
-        res_json = response.json()
-        self.id = res_json['self']['id']
+        response = requests.post('https://slack.com/api/rtm.start', data={'token': self.token}).json()
+        self.id = response.get('self').get('id')
 
-        if res_json['ok'] is True and res_json['url'] is not None:
-            return res_json['url']
+        if response.get('ok') is True and response.get('url') is not None:
+            return response.get('url')
         else:
             raise Exception('Slack RTM API Connect is failed...')
 
