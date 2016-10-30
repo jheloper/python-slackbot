@@ -40,7 +40,6 @@ class SlackBot:
             while True:
                 recv_msg = yield from self.websocket.recv()
                 msg_json = json.loads(recv_msg)
-                print(msg_json)
                 channel = msg_json.get('channel')
                 user = msg_json.get('user')
                 if self.preprocess(msg_json):
@@ -64,7 +63,6 @@ class SlackBot:
     def parse_message(self, message_text):
         message_text = str(message_text)
         messages = message_text.split(' ', 2)
-        print(len(messages))
         if len(messages) < 3:
             return messages
 
