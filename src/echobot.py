@@ -3,13 +3,19 @@ import websockets
 import asyncio
 import json
 
+# sercet file read, this file content is api token, key, and other secrets...
+secrets = open('../secret.json')
+secrets_data = json.loads(secrets.read())
+SLACK_API_TOKEN = secrets_data.get('SLACK_API_TOKEN')
+secrets.close()
+
 
 @asyncio.coroutine
 def echo():
     ws_url = None
     bot_id = None
     res = requests.post('https://slack.com/api/rtm.start',
-                        data={'token': 'Your API Token'}).json()
+                        data={'token': SLACK_API_TOKEN}).json()
 
     if res.get('ok'):
         bot_id = res.get('self').get('id')

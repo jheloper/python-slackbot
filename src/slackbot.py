@@ -11,7 +11,10 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 # sercet file read, this file content is api token, key, and other secrets...
-secrets = json.loads(open('../secret.json').read())
+secrets = open('../secret.json')
+secrets_data = json.loads(secrets.read())
+SLACK_API_TOKEN = secrets_data.get('SLACK_API_TOKEN')
+secrets.close()
 
 
 class SlackBot:
@@ -89,5 +92,5 @@ class SlackBot:
         return command_result
 
 if __name__ == '__main__':
-    sb = SlackBot(secrets['SLACK_API_TOKEN'])
+    sb = SlackBot(SLACK_API_TOKEN)
     asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
