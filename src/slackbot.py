@@ -20,7 +20,6 @@ class SlackBot:
         self.token = token
         self.websocket = None
         self.id = None
-        self.notice = None
 
     def connect_rtm(self):
         response = requests.post('https://slack.com/api/rtm.start', data={'token': self.token}).json()
@@ -33,14 +32,21 @@ class SlackBot:
 
     @asyncio.coroutine
     def listen_rtm(self):
-        self.websocket = yield from websockets.connect(self.connect_rtm())
-        while True:
-            recv_msg = yield from self.websocket.recv()
-            msg_json = json.loads(recv_msg)
-            print(msg_json)
-            if self.preprocess(msg_json):
-                messages = self.parse_message(msg_json.get('text'))
-                yield from self.route_commands(msg_json.get('channel'), msg_json.get('user'), messages)
+        try:
+            self.websocket = yield from websockets.connect(self.connect_rtm())
+            while True:
+                recv_msg = yield from self.websocket.recv()
+                msg_json = json.loads(recv_msg)
+                print(msg_json)
+                channel = msg_json.get('channel')
+                user = msg_json.get('user')
+                if self.preprocess(msg_json):
+                    messages = self.parse_message(msg_json.get('text'))
+                    command_result = self.route_commands(messages)
+                    yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": channel,
+                                                               "text": '<@{0}> {1}'.format(user, command_result)}))
+        except Exception as e:
+            print(e)
 
     def preprocess(self, msg_json):
         if msg_json.get('type') == 'hello':
@@ -55,10 +61,18 @@ class SlackBot:
     def parse_message(self, message_text):
         message_text = str(message_text)
         messages = message_text.split(' ', 2)
+        print(len(messages))
+        if len(messages) < 3:
+            return messages
+
+        if messages[2].find('"') == 0 and messages[2].count('"') == 2:
+            sub_msg = messages[2].rsplit('" ', 1)
+            messages[2] = sub_msg[0].replace('"', '')
+        else:
+            messages[1] = 'Invalid Parameter'
         return messages[1:]
 
-    @asyncio.coroutine
-    def route_commands(self, channel, user, messages):
+    def route_commands(self, messages):
         command = messages[0]
 
         if command == '/지도':
@@ -67,11 +81,13 @@ class SlackBot:
             command_result = cmds.search_translate(messages[1])
         elif command == '/날씨':
             command_result = cmds.search_weather(messages[1])
+        elif command == 'Invalid Parameter':
+            command_result = '파라미터가 유효하지 않습니다.'
+        else:
+            command_result = '무슨 말씀이신지 잘 모르겠어요...'
 
-        yield from self.websocket.send(json.dumps({"id": 1, "type": "message", "channel": channel,
-                                                   "text": '<@{0}> {1}'.format(user, command_result)}))
+        return command_result
 
 if __name__ == '__main__':
     sb = SlackBot(secrets['SLACK_API_TOKEN'])
     asyncio.get_event_loop().run_until_complete(sb.listen_rtm())
-    asyncio.get_event_loop().run_forever()

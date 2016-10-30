@@ -27,5 +27,5 @@ def echo():
             yield from ws.send(json.dumps({"id": 1, "type": "message", "channel": recv_json.get('channel'),
                                                    "text": '<@{0}> {1}'.format(recv_json.get('user'), msg[1])}))
 
-asyncio.get_event_loop().run_until_complete(echo())
-asyncio.get_event_loop().run_forever()
+if __name__ == '__main__':
+    asyncio.get_event_loop().run_until_complete(echo())

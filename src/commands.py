@@ -5,13 +5,16 @@ from datetime import datetime, date, timedelta
 
 
 # sercet file read, this file content is api token, key, and other secrets...
-secrets = json.loads(open('../secret.json').read())
+secrets = open('../secret.json')
+secrets_data = json.loads(secrets.read())
+NAVER_API_CLIENT_ID = secrets_data.get('NAVER_API_CLIENT_ID')
+NAVER_API_CLIENT_SECRET = secrets_data.get('NAVER_API_CLIENT_SECRET')
+PUBLIC_KMA_API_KEY = secrets_data.get('PUBLIC_KMA_API_KEY')
+secrets.close()
 
-city_xy = json.loads(open('../city_xy.json', 'r', encoding='utf-8').read())
-
-NAVER_API_CLIENT_ID = secrets['NAVER_API_CLIENT_ID']
-NAVER_API_CLIENT_SECRET = secrets['NAVER_API_CLIENT_SECRET']
-PUBLIC_KMA_API_KEY = secrets['PUBLIC_KMA_API_KEY']
+city_xy = open('../city_xy.json', 'r', encoding='utf-8')
+CITY_XY = json.loads(city_xy.read())
+city_xy.close()
 
 def test_api():
     # NAVER 지역 검색 API를 통해 특정 장소의 위치 알아내기
@@ -48,8 +51,6 @@ def search_translate(source_str):
 # 공공데이터 초단기예보 조회 결과.
 def search_weather(city_str):
     tu = (23, 20, 17, 14, 11, 8, 5, 2)
-    # fc4 = ('03', '00', '21', '18', '15', '12', '09', '06')
-    # fc7 = ('03', '00', '21', '18', '15', '12', '09', '06')
     base_time = None
     fcst_time = None
     base_date = None
@@ -70,6 +71,11 @@ def search_weather(city_str):
             fcst_time = '0000'
         elif base_time == 23:
             fcst_time = '0300'
+    elif base_time < 10:
+        base_time = '0' + str(base_time)
+        base_date = datetime.today()
+        fcst_date = datetime.today()
+        fcst_time = str(tu[i] + 4) + '00'
     else:
         base_date = datetime.today()
         fcst_date = datetime.today()
@@ -79,8 +85,8 @@ def search_weather(city_str):
     fcst_date = str(fcst_date.year) + str(fcst_date.month) + str(fcst_date.day)
     base_time = str(base_time) + '00'
 
-    params = {'base_date': base_date, 'base_time': base_time, 'nx': city_xy.get(city_str).get('nx'),
-              'ny': city_xy.get(city_str).get('ny'), '_type': 'json', 'numOfRows': '30'}
+    params = {'base_date': base_date, 'base_time': base_time, 'nx': CITY_XY.get(city_str).get('nx'),
+              'ny': CITY_XY.get(city_str).get('ny'), '_type': 'json', 'numOfRows': '30'}
     headers = {'Content-Type': 'application/json'}
     res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2/ForecastSpaceData?ServiceKey=' +
                        PUBLIC_KMA_API_KEY, params=params, headers=headers)
@@ -91,7 +97,8 @@ def search_weather(city_str):
         categoty_value = item.get('category')
         fcst_time_value = str(item.get('fcstTime'))
         fcst_date_value = str(item.get('fcstDate'))
-        if categoty_value in ['POP', 'R06', 'S06', 'T3H'] and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
+        if categoty_value in ['POP', 'R06', 'S06', 'T3H'] \
+                and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
             dic[categoty_value] = item.get('fcstValue')
         elif categoty_value == 'PTY' and fcst_time_value == fcst_time and fcst_date_value == fcst_date:
             if item.get('fcstValue') == 0:
