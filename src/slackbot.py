@@ -3,6 +3,7 @@ import websockets
 import asyncio
 import logging
 import requests
+import secrets
 import src.commands as cmds
 
 # debug logger...
@@ -10,11 +11,8 @@ logger = logging.getLogger('websockets')
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-# sercet file read, this file content is api token, key, and other secrets...
-secrets = open('../secret.json')
-secrets_data = json.loads(secrets.read())
-SLACK_API_TOKEN = secrets_data.get('SLACK_API_TOKEN')
-secrets.close()
+CURLY_LEFT_DOUBLE_QUOTE = chr(8220)
+CURLY_RIGHT_DOUBLE_QUOTE = chr(8221)
 
 
 class SlackBot:
@@ -63,8 +61,12 @@ class SlackBot:
     def parse_message(self, message_text):
         message_text = str(message_text)
         messages = message_text.split(' ', 2)
+
         if len(messages) < 3:
             return messages
+
+        if messages[2].find(CURLY_LEFT_DOUBLE_QUOTE) or messages[2].find(CURLY_RIGHT_DOUBLE_QUOTE):
+            messages[2] = messages[2].replace(CURLY_LEFT_DOUBLE_QUOTE, '"').replace(CURLY_RIGHT_DOUBLE_QUOTE, '"')
 
         if messages[2].find('"') == 0 and messages[2].count('"') == 2:
             sub_msg = messages[2].rsplit('" ', 1)
@@ -75,7 +77,6 @@ class SlackBot:
 
     def route_commands(self, messages):
         command = messages[0]
-
         if command == '/지도':
             command_result = cmds.search_location(messages[1])
         elif command == '/번역':
@@ -90,5 +91,5 @@ class SlackBot:
         return command_result
 
 if __name__ == '__main__':
-    sb = SlackBot(SLACK_API_TOKEN)
+    sb = SlackBot(secrets.SLACK_API_TOKEN)
     asyncio.get_event_loop().run_until_complete(sb.listen_rtm())

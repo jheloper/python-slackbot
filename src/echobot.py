@@ -2,12 +2,7 @@ import requests
 import websockets
 import asyncio
 import json
-
-# sercet file read, this file content is api token, key, and other secrets...
-secrets = open('../secret.json')
-secrets_data = json.loads(secrets.read())
-SLACK_API_TOKEN = secrets_data.get('SLACK_API_TOKEN')
-secrets.close()
+import secrets
 
 
 @asyncio.coroutine
@@ -15,7 +10,7 @@ def echo():
     ws_url = None
     bot_id = None
     res = requests.post('https://slack.com/api/rtm.start',
-                        data={'token': SLACK_API_TOKEN}).json()
+                        data={'token': secrets.SLACK_API_TOKEN}).json()
 
     if res.get('ok'):
         bot_id = res.get('self').get('id')
@@ -27,9 +22,11 @@ def echo():
 
     while True:
         recv_msg = yield from ws.recv()
+        print(type(recv_msg))
         recv_json = json.loads(recv_msg)
         if recv_json.get('type') == 'message' and recv_json.get('text').startswith('<@{}>'.format(bot_id)):
             msg = recv_json.get('text').split(' ', 1)
+            print(msg)
             yield from ws.send(json.dumps({"id": 1, "type": "message", "channel": recv_json.get('channel'),
                                                    "text": '<@{0}> {1}'.format(recv_json.get('user'), msg[1])}))
 

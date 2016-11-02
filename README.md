@@ -5,18 +5,10 @@
 슬라이드 자료 : http://www.slideshare.net/JoongHyeonKim/slackbot-with-python-67873010
 
 ### 실행방법
+(secret.json -> secrets.py로 변경했습니다.)
+프로젝트 루트 경로에 secrets.py 파일에 있는 "SLACK_API_TOKEN", "PUBLIC_KMA_API_KEY"의 내용을 넣어주셔야 합니다. 
 
-프로젝트 루트 경로에 secret.json 파일을 생성하여 
-
-`
-{
-  "SLACK_API_TOKEN": "Your Token"
-}
-`
-
-위 내용을 넣어주셔야 합니다. 
-
-`"Your Token"` 부분에는 여러분이 발급 받으신 슬랙 봇 API 토큰을 넣어주세요!
+`"Your Token"` 부분에는 여러분이 발급 받으신 API 토큰을 넣어주세요!
 
 코드는 계속 개선해나갈 생각입니다. 문제가 있으시면 연락주세요!
 
