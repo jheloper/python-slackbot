@@ -1,8 +1,10 @@
-import requests
-import websockets
 import asyncio
 import json
-import secrets
+
+import requests
+import websockets
+
+from src import secrets
 
 
 @asyncio.coroutine

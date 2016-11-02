@@ -1,9 +1,9 @@
-import requests
 import json
+from datetime import datetime, timedelta
+import requests
 import secrets
-from datetime import datetime, date, timedelta
 
-city_xy = open('../city_xy.json', 'r', encoding='utf-8')
+city_xy = open('city_xy.json', 'r', encoding='utf-8')
 CITY_XY = json.loads(city_xy.read())
 city_xy.close()
 

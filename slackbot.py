@@ -1,10 +1,12 @@
-import json
-import websockets
 import asyncio
+import json
 import logging
+
 import requests
+import websockets
+
 import secrets
-import src.commands as cmds
+from commands import command as cmds
 
 # debug logger...
 logger = logging.getLogger('websockets')
