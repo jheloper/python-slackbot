@@ -93,4 +93,4 @@ myvenv/
 .idea
 
 # Secret file
-# secrets.py
+secrets.py
