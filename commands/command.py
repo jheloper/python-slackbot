@@ -1,11 +1,7 @@
-import json
 from datetime import datetime, timedelta
 import requests
 import secrets
-
-city_xy = open('../city_xy.json', 'r', encoding='utf-8')
-CITY_XY = json.loads(city_xy.read())
-city_xy.close()
+from city_xy import city_xy
 
 
 # 네이버 지도 검색 결과.
@@ -53,8 +49,8 @@ def search_weather(city_str):
     fcst_date = fcst_date.strftime('%Y%m%d')
     base_time = str(base_time) + '00'
 
-    params = {'base_date': base_date, 'base_time': base_time, 'nx': CITY_XY.get(city_str).get('nx'),
-              'ny': CITY_XY.get(city_str).get('ny'), '_type': 'json', 'numOfRows': '30'}
+    params = {'base_date': base_date, 'base_time': base_time, 'nx': city_xy.get(city_str).get('nx'),
+              'ny': city_xy.get(city_str).get('ny'), '_type': 'json', 'numOfRows': '30'}
     headers = {'Content-Type': 'application/json'}
     res = requests.get('http://newsky2.kma.go.kr/service/SecndSrtpdFrcstInfoService2/ForecastSpaceData?ServiceKey=' +
                        secrets.PUBLIC_KMA_API_KEY, params=params, headers=headers)
